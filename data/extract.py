@@ -104,10 +104,10 @@ def process_commit_batch_pygit2(repo_path, commit_oids, args):
                 "parents": [str(p) for p in commit.parents],
                 "author_name": commit.author.name,
                 "author_email": commit.author.email,
-                "authored_date": commit.author.when.isoformat() if commit.author.when else None,
+                "authored_date": commit.author.when.isoformat() if hasattr(commit.author, 'when') and commit.author.when else None,
                 "committer_name": commit.committer.name,
                 "committer_email": commit.committer.email,
-                "committed_date": commit.committer.when.isoformat() if commit.committer.when else None,
+                "committed_date": commit.committer.when.isoformat() if hasattr(commit.committer, 'when') and commit.committer.when else None,
                 "message": commit.message,
                 "in_main_branch": True,  # Assume main branch for simplicity
                 "merge": len(commit.parents) > 1,
@@ -517,7 +517,8 @@ def main():
         pass  # Results already obtained from fast extraction
     else:
         results = []
-        batch_size = 100  # Save every 100 commits to avoid data loss
+        batch_size = 50  # Smaller batches for more frequent saves
+        save_interval = 10  # Save every 10 batches
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             def process_commit_with_timeout(commit):
@@ -645,6 +646,21 @@ def main():
 
                     pbar.close()
                     print(f"Batch {i//batch_size + 1} completed. Total processed: {len(results)} commits")
+
+                    # Incremental save and push every few batches
+                    batch_num = i//batch_size + 1
+                    if batch_num % save_interval == 0 and len(results) > 0:
+                        print(f"💾 Saving progress... ({len(results)} commits so far)")
+                        c_fw.flush()
+                        m_fw.flush()
+
+                        # Create incremental backup
+                        backup_dir = out_dir.parent / f"backup_batch_{batch_num}"
+                        if backup_dir.exists():
+                            shutil.rmtree(backup_dir)
+                        shutil.copytree(out_dir, backup_dir)
+
+                        print(f"✅ Progress saved to backup_batch_{batch_num}")
 
                 c_fw.close(); m_fw.close()
 
