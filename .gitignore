@@ -8,6 +8,8 @@ execute_command.sh
 # C extensions
 .idea
 *.so
+analysis_results/
+work_hs/
 *.slurm
 *.gz
 env.ipynb 

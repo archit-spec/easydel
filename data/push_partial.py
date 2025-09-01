@@ -7,7 +7,7 @@ from huggingface_hub import HfApi, create_repo, upload_folder
 def push_to_hf(out_dir, hf_namespace, hf_dataset, hf_token):
     repo_id = f"{hf_namespace}/{hf_dataset}"
     print(f"Pushing to HF dataset: {repo_id}")
-    api = HfApi()
+    api = HfApi()usls
     try:
         create_repo(repo_id=repo_id, token=hf_token, repo_type="dataset", exist_ok=True)
     except Exception:
